@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SafeDroid – Risk Score</title>
+
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      padding: 40px;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+    }
+
+    button {
+      background: #00c6ff;
+      color: #003344;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #00aaff;
+    }
+
+    .score {
+      font-size: 64px;
+      font-weight: bold;
+      margin: 20px 0 10px;
+    }
+
+    .level {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: bold;
+      display: inline-block;
+      margin-top: 10px;
+    }
+
+    .LOW { background: #2ecc71; }
+    .MEDIUM { background: #f1c40f; color: #333; }
+    .HIGH { background: #e74c3c; }
+
+    .hidden {
+      display: none;
+    }
+
+    .loading {
+      font-size: 14px;
+      margin-top: 15px;
+      opacity: 0.8;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.3; }
+      50% { opacity: 1; }
+      100% { opacity: 0.3; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>SafeDroid Risk Scan</h1>
+
+    <select id="app">
+      <option value="Instagram">Instagram</option>
+      <option value="WhatsApp">WhatsApp</option>
+      <option value="FakeApp">FakeApp</option>
+    </select>
+
+    <button type="button" onclick="scan()">Scan App</button>
+
+    <div id="result" class="hidden">
+      <div class="loading" id="loading">Scanning app permissions…</div>
+      <div class="score" id="score">0</div>
+      <div class="level" id="level" style="display:none;">LOW</div>
+    </div>
+  </div>
+
+  <script>
+    async function scan() {
+      const appName = document.getElementById("app").value;
+
+      const result = document.getElementById("result");
+      const scoreEl = document.getElementById("score");
+      const levelEl = document.getElementById("level");
+      const loadingEl = document.getElementById("loading");
+
+      result.classList.remove("hidden");
+      loadingEl.style.display = "block";
+      levelEl.style.display = "none";
+      scoreEl.innerText = "0";
+
+      const response = await fetch("http://127.0.0.1:8000/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ app_name: appName })
+      });
+
+      const data = await response.json();
+
+      let current = 0;
+      const target = data.risk_score;
+
+      const counter = setInterval(() => {
+        current++;
+        scoreEl.innerText = current;
+
+        if (current >= target) {
+          clearInterval(counter);
+          loadingEl.style.display = "none";
+          levelEl.innerText = data.risk_level;
+          levelEl.className = "level " + data.risk_level;
+          levelEl.style.display = "inline-block";
+        }
+      }, 40);
+    }
+  </script>
+</body>
+</html>
