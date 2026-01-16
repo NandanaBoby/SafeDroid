@@ -2,149 +2,868 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>SafeDroid – Risk Score</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeDroid – App Risk Analyzer</title>
 
   <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      height: 100vh;
+    * {
       margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    .card {
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(12px);
-      border-radius: 16px;
-      padding: 40px;
-      width: 320px;
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      color: #e0e0e0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
       text-align: center;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      margin-bottom: 40px;
+      padding: 20px 0;
     }
 
-    h1 {
-      font-size: 22px;
-      margin-bottom: 10px;
-      font-weight: 500;
+    .header h1 {
+      font-size: 2.5em;
+      font-weight: 600;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #00d4ff, #0099ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
-    select, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 12px;
-      border-radius: 8px;
-      border: none;
+    .header p {
+      color: #999;
       font-size: 14px;
     }
 
-    button {
-      background: #00c6ff;
-      color: #003344;
-      font-weight: bold;
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .tab-btn {
+      padding: 12px 24px;
+      border: 2px solid rgba(0, 212, 255, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+      color: #e0e0e0;
+      border-radius: 8px;
       cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
     }
 
-    button:hover {
-      background: #00aaff;
+    .tab-btn:hover {
+      border-color: #00d4ff;
+      background: rgba(0, 212, 255, 0.1);
     }
 
-    .score {
-      font-size: 64px;
-      font-weight: bold;
-      margin: 20px 0 10px;
+    .tab-btn.active {
+      background: linear-gradient(135deg, #00d4ff, #0099ff);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3);
     }
 
-    .level {
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: bold;
-      display: inline-block;
-      margin-top: 10px;
-    }
-
-    .LOW { background: #2ecc71; }
-    .MEDIUM { background: #f1c40f; color: #333; }
-    .HIGH { background: #e74c3c; }
-
-    .hidden {
+    .tab-content {
       display: none;
     }
 
-    .loading {
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 212, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(0, 212, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .card h3 {
+      font-size: 16px;
+      margin-bottom: 16px;
+      color: #00d4ff;
+      font-weight: 600;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      color: #e0e0e0;
+      border-radius: 8px;
       font-size: 14px;
-      margin-top: 15px;
-      opacity: 0.8;
-      animation: pulse 1.2s infinite;
+      transition: all 0.3s ease;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: #00d4ff;
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #00d4ff, #0099ff);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 8px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(0, 212, 255, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .result-card {
+      grid-column: 1 / -1;
+      background: rgba(0, 212, 255, 0.05);
+      border: 2px solid rgba(0, 212, 255, 0.2);
+    }
+
+    .score-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .score-box {
+      text-align: center;
+    }
+
+    .score-value {
+      font-size: 48px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00d4ff, #0099ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .score-label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .risk-level {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    .risk-level.CRITICAL {
+      background: rgba(255, 71, 87, 0.3);
+      color: #ff6b6b;
+      border: 1px solid #ff6b6b;
+    }
+
+    .risk-level.HIGH {
+      background: rgba(255, 152, 0, 0.3);
+      color: #ffa726;
+      border: 1px solid #ffa726;
+    }
+
+    .risk-level.MEDIUM {
+      background: rgba(255, 193, 7, 0.3);
+      color: #ffd54f;
+      border: 1px solid #ffd54f;
+    }
+
+    .risk-level.LOW {
+      background: rgba(76, 175, 80, 0.3);
+      color: #81c784;
+      border: 1px solid #81c784;
+    }
+
+    .permission-list {
+      margin-top: 16px;
+    }
+
+    .permission-item {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .permission-item.critical {
+      border-left: 3px solid #ff6b6b;
+    }
+
+    .permission-item.dangerous {
+      border-left: 3px solid #ffa726;
+    }
+
+    .permission-item.normal {
+      border-left: 3px solid #81c784;
+    }
+
+    .threat-indicator {
+      background: rgba(255, 71, 87, 0.15);
+      border-left: 3px solid #ff6b6b;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    .threat-icon {
+      display: inline-block;
+      color: #ff6b6b;
+      margin-right: 8px;
+      font-weight: bold;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 16px;
+      border-radius: 8px;
+      border-left: 3px solid #00d4ff;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #00d4ff;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      animation: pulse 1.5s infinite;
     }
 
     @keyframes pulse {
-      0% { opacity: 0.3; }
+      0%, 100% { opacity: 0.4; }
       50% { opacity: 1; }
-      100% { opacity: 0.3; }
+    }
+
+    .error {
+      background: rgba(255, 71, 87, 0.2);
+      border: 1px solid #ff6b6b;
+      color: #ff9999;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .comparison-table {
+      width: 100%;
+      margin-top: 16px;
+      border-collapse: collapse;
+    }
+
+    .comparison-table th {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 2px solid rgba(0, 212, 255, 0.2);
+      font-size: 12px;
+      color: #00d4ff;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .comparison-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+      font-size: 13px;
+    }
+
+    .category-badge {
+      display: inline-block;
+      background: rgba(0, 212, 255, 0.2);
+      color: #00d4ff;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 768px) {
+      .score-section {
+        grid-template-columns: 1fr;
+      }
+
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+
+      .header h1 {
+        font-size: 1.8em;
+      }
+
+      .tabs {
+        justify-content: flex-start;
+        overflow-x: auto;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 
 <body>
-  <div class="card">
-    <h1>SafeDroid Risk Scan</h1>
+  <div class="container">
+    <div class="header">
+      <h1>SafeDroid</h1>
+      <p>Advanced App Permission & Security Analysis Platform</p>
+    </div>
 
-    <select id="app">
-      <option value="Instagram">Instagram</option>
-      <option value="WhatsApp">WhatsApp</option>
-      <option value="FakeApp">FakeApp</option>
-    </select>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('scan')">Quick Scan</button>
+      <button class="tab-btn" onclick="switchTab('analyze')">Detailed Analysis</button>
+      <button class="tab-btn" onclick="switchTab('threats')">Threat Detection</button>
+      <button class="tab-btn" onclick="switchTab('compare')">Compare Apps</button>
+      <button class="tab-btn" onclick="switchTab('permissions')">Permission DB</button>
+    </div>
 
-    <button type="button" onclick="scan()">Scan App</button>
+    <!-- QUICK SCAN TAB -->
+    <div id="scan" class="tab-content active">
+      <div class="dashboard">
+        <div class="card">
+          <h3>Quick Risk Scan</h3>
+          <div class="input-group">
+            <label>Select App</label>
+            <select id="app">
+              <option value="">Loading apps...</option>
+            </select>
+          </div>
+          <button onclick="performQuickScan()">Scan App</button>
+          <div id="scanLoading" class="loading hidden">Analyzing permissions...</div>
+        </div>
 
-    <div id="result" class="hidden">
-      <div class="loading" id="loading">Scanning app permissions…</div>
-      <div class="score" id="score">0</div>
-      <div class="level" id="level" style="display:none;">LOW</div>
+        <div id="scanResult" class="card result-card hidden">
+          <h3>Risk Assessment</h3>
+          <div class="score-section">
+            <div class="score-box">
+              <div class="score-value" id="quickScore">0</div>
+              <div class="score-label">Risk Score</div>
+            </div>
+            <div class="score-box">
+              <div class="score-value" id="permCount">0</div>
+              <div class="score-label">Permissions</div>
+            </div>
+            <div class="score-box">
+              <div class="score-value" id="dangerousCount">0</div>
+              <div class="score-label">Dangerous</div>
+            </div>
+          </div>
+          <div style="text-align: center;">
+            <div class="risk-level" id="quickLevel"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAILED ANALYSIS TAB -->
+    <div id="analyze" class="tab-content">
+      <div class="dashboard">
+        <div class="card">
+          <h3>Select App for Analysis</h3>
+          <div class="input-group">
+            <label>App Name</label>
+            <select id="appAnalyze">
+              <option value="">Loading apps...</option>
+            </select>
+          </div>
+          <button onclick="performDetailedAnalysis()">Analyze</button>
+          <div id="analyzeLoading" class="loading hidden">Running comprehensive analysis...</div>
+        </div>
+
+        <div id="analysisResult" class="card result-card hidden">
+          <h3>Comprehensive Analysis</h3>
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-value" id="analyzeScore">0</div>
+              <div class="stat-label">Risk Score</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" id="analyzeLevel">-</div>
+              <div class="stat-label">Risk Level</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" id="criticalPerms">0</div>
+              <div class="stat-label">Critical Perms</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value" id="dataTypes">0</div>
+              <div class="stat-label">Data Types</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="permissionBreakdown" class="card hidden">
+          <h3>Permission Breakdown</h3>
+          <div id="permContent"></div>
+        </div>
+
+        <div id="privacyImpactCard" class="card hidden">
+          <h3>Privacy Impact Analysis</h3>
+          <div id="privacyContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- THREAT DETECTION TAB -->
+    <div id="threats" class="tab-content">
+      <div class="dashboard">
+        <div class="card">
+          <h3>Threat Scanner</h3>
+          <div class="input-group">
+            <label>App Name</label>
+            <select id="appThreats">
+              <option value="">Loading apps...</option>
+            </select>
+          </div>
+          <button onclick="performThreatDetection()">Scan Threats</button>
+          <div id="threatLoading" class="loading hidden">Detecting threats...</div>
+        </div>
+
+        <div id="threatResult" class="card result-card hidden">
+          <h3>Threat Indicators</h3>
+          <div id="threatContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPARE TAB -->
+    <div id="compare" class="tab-content">
+      <div class="dashboard">
+        <div class="card">
+          <h3>Compare Apps</h3>
+          <div class="input-group">
+            <label>App 1</label>
+            <select id="appCompare1">
+              <option value="">Loading apps...</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>App 2</label>
+            <select id="appCompare2">
+              <option value="">Loading apps...</option>
+            </select>
+          </div>
+          <button onclick="performComparison()">Compare</button>
+          <div id="compareLoading" class="loading hidden">Comparing apps...</div>
+        </div>
+
+        <div id="comparisonResult" class="card result-card hidden">
+          <h3>Comparison Results</h3>
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>App</th>
+                <th>Risk Score</th>
+                <th>Level</th>
+                <th>Permissions</th>
+              </tr>
+            </thead>
+            <tbody id="comparisonBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERMISSIONS DB TAB -->
+    <div id="permissions" class="tab-content">
+      <div class="dashboard">
+        <div class="card">
+          <h3>Permission Database</h3>
+          <div class="input-group">
+            <label>Filter by Category</label>
+            <select id="categoryFilter" onchange="filterPermissions()">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+          <button onclick="loadPermissions()">Load Permissions</button>
+        </div>
+
+        <div id="permissionsDbResult" class="card result-card hidden">
+          <h3>Permission Metadata</h3>
+          <div id="permissionsContent" style="max-height: 600px; overflow-y: auto;"></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    async function scan() {
-      const appName = document.getElementById("app").value;
+    const API_BASE = "http://127.0.0.1:8000";
+    let allApps = [];
+    let permissionCategories = {};
 
-      const result = document.getElementById("result");
-      const scoreEl = document.getElementById("score");
-      const levelEl = document.getElementById("level");
-      const loadingEl = document.getElementById("loading");
+    // Initialize
+    document.addEventListener("DOMContentLoaded", async () => {
+      console.log("Page loaded, initializing...");
+      await loadAvailableApps();
+      await loadPermissionCategories();
+    });
 
-      result.classList.remove("hidden");
-      loadingEl.style.display = "block";
-      levelEl.style.display = "none";
-      scoreEl.innerText = "0";
-
-      const response = await fetch("http://127.0.0.1:8000/scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ app_name: appName })
-      });
-
-      const data = await response.json();
-
-      let current = 0;
-      const target = data.risk_score;
-
-      const counter = setInterval(() => {
-        current++;
-        scoreEl.innerText = current;
-
-        if (current >= target) {
-          clearInterval(counter);
-          loadingEl.style.display = "none";
-          levelEl.innerText = data.risk_level;
-          levelEl.className = "level " + data.risk_level;
-          levelEl.style.display = "inline-block";
+    async function loadAvailableApps() {
+      try {
+        console.log("Fetching apps from:", API_BASE + "/apps");
+        const response = await fetch(`${API_BASE}/apps`);
+        console.log("Response status:", response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      }, 40);
+        
+        const data = await response.json();
+        console.log("Apps data received:", data);
+        allApps = data;
+        
+        const appSelects = ["app", "appAnalyze", "appThreats", "appCompare1", "appCompare2"];
+        appSelects.forEach(id => {
+          const select = document.getElementById(id);
+          if (select) {
+            const options = allApps.map(app => 
+              `<option value="${app.name}">${app.name} v${app.version}</option>`
+            ).join("");
+            select.innerHTML = '<option value="">Select an app</option>' + options;
+            console.log("Populated dropdown:", id);
+          }
+        });
+      } catch (error) {
+        console.error("Error loading apps:", error);
+        alert("Failed to load apps. Make sure the backend server is running at " + API_BASE);
+      }
+    }
+
+    async function loadPermissionCategories() {
+      try {
+        const response = await fetch(`${API_BASE}/permission-categories`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        permissionCategories = await response.json();
+        
+        const categoryFilter = document.getElementById("categoryFilter");
+        if (categoryFilter) {
+          categoryFilter.innerHTML = '<option value="">All Categories</option>' +
+            Object.entries(permissionCategories).map(([key, val]) => 
+              `<option value="${key}">${val.name}</option>`
+            ).join("");
+        }
+      } catch (error) {
+        console.error("Error loading categories:", error);
+      }
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      
+      document.getElementById(tabName).classList.add("active");
+      event.target.classList.add("active");
+    }
+
+    async function performQuickScan() {
+      const appName = document.getElementById("app").value;
+      if (!appName) return alert("Select an app");
+
+      document.getElementById("scanLoading").classList.remove("hidden");
+      
+      try {
+        console.log("Scanning app:", appName);
+        const response = await fetch(`${API_BASE}/scan`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_name: appName })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Scan result:", data);
+        
+        document.getElementById("quickScore").innerText = data.risk_score;
+        document.getElementById("permCount").innerText = data.extracted_permissions.length;
+        document.getElementById("dangerousCount").innerText = data.explanations.filter(e => e.includes("CRITICAL") || e.includes("DANGEROUS")).length;
+        document.getElementById("quickLevel").innerText = data.risk_level;
+        document.getElementById("quickLevel").className = `risk-level ${data.risk_level}`;
+        
+        document.getElementById("scanResult").classList.remove("hidden");
+      } catch (error) {
+        console.error("Scan error:", error);
+        alert("Error: " + error.message);
+      } finally {
+        document.getElementById("scanLoading").classList.add("hidden");
+      }
+    }
+
+    async function performDetailedAnalysis() {
+      const appName = document.getElementById("appAnalyze").value;
+      if (!appName) return alert("Select an app");
+
+      document.getElementById("analyzeLoading").classList.remove("hidden");
+      
+      try {
+        console.log("Analyzing app:", appName);
+        const response = await fetch(`${API_BASE}/analyze`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_name: appName })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Analysis result:", data);
+        
+        document.getElementById("analyzeScore").innerText = data.risk_score;
+        document.getElementById("analyzeLevel").innerText = data.risk_level;
+        document.getElementById("criticalPerms").innerText = data.permission_analysis.severity_breakdown.critical.length;
+        document.getElementById("dataTypes").innerText = data.privacy_analysis.data_types_count;
+        
+        // Permission breakdown
+        const severityBreakdown = data.permission_analysis.severity_breakdown;
+        let permContent = "<strong>Critical Permissions:</strong>";
+        permContent += severityBreakdown.critical.map(p => 
+          `<div class="permission-item critical">${p.permission} <span>Severity: ${p.severity}</span></div>`
+        ).join("");
+        
+        document.getElementById("permContent").innerHTML = permContent || "<p>No critical permissions</p>";
+        document.getElementById("permissionBreakdown").classList.remove("hidden");
+        
+        // Privacy impact
+        const privacyData = data.privacy_analysis;
+        let privacyContent = "";
+        ["CRITICAL", "HIGH"].forEach(level => {
+          if (privacyData.privacy_impacts[level].length > 0) {
+            privacyContent += `<strong>${level} Impact:</strong><div class="permission-list">`;
+            privacyData.privacy_impacts[level].forEach(p => {
+              privacyContent += `<div class="permission-item">${p.permission}</div>`;
+            });
+            privacyContent += "</div>";
+          }
+        });
+        
+        document.getElementById("privacyContent").innerHTML = privacyContent || "<p>Low privacy impact</p>";
+        document.getElementById("privacyImpactCard").classList.remove("hidden");
+        
+        document.getElementById("analysisResult").classList.remove("hidden");
+      } catch (error) {
+        console.error("Analysis error:", error);
+        alert("Error: " + error.message);
+      } finally {
+        document.getElementById("analyzeLoading").classList.add("hidden");
+      }
+    }
+
+    async function performThreatDetection() {
+      const appName = document.getElementById("appThreats").value;
+      if (!appName) return alert("Select an app");
+
+      document.getElementById("threatLoading").classList.remove("hidden");
+      
+      try {
+        console.log("Detecting threats for:", appName);
+        const response = await fetch(`${API_BASE}/detect-threats`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_name: appName })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Threat detection result:", data);
+        
+        let threatContent = "";
+        if (data.threat_indicators.detected_threats.length > 0) {
+          threatContent = data.threat_indicators.detected_threats
+            .map(threat => `<div class="threat-indicator"><span class="threat-icon">⚠️</span>${threat}</div>`)
+            .join("");
+        } else {
+          threatContent = "<p>No major threats detected ✓</p>";
+        }
+        
+        threatContent += `<p style="margin-top: 16px;"><strong>Privilege Escalation:</strong> <span style="color: ${data.threat_indicators.privilege_escalation ? '#ff6b6b' : '#81c784'}; font-weight: 700;">${data.threat_indicators.privilege_escalation ? 'YES ⚠️' : 'NO ✓'}</span></p>`;
+        threatContent += `<p style="margin-top: 12px;"><strong>Data Exfiltration Risk:</strong> <span style="color: ${data.threat_indicators.data_exfiltration_risk === 'CRITICAL' ? '#ff6b6b' : '#ffa726'}; font-weight: 700;">${data.threat_indicators.data_exfiltration_risk}</span></p>`;
+        
+        document.getElementById("threatContent").innerHTML = threatContent;
+        document.getElementById("threatResult").classList.remove("hidden");
+      } catch (error) {
+        console.error("Threat detection error:", error);
+        alert("Error: " + error.message);
+      } finally {
+        document.getElementById("threatLoading").classList.add("hidden");
+      }
+    }
+
+    async function performComparison() {
+      const app1 = document.getElementById("appCompare1").value;
+      const app2 = document.getElementById("appCompare2").value;
+      
+      if (!app1 || !app2) return alert("Select two apps");
+      if (app1 === app2) return alert("Select different apps");
+
+      document.getElementById("compareLoading").classList.remove("hidden");
+      
+      try {
+        console.log("Comparing apps:", app1, "vs", app2);
+        const response = await fetch(`${API_BASE}/compare`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ app_names: [app1, app2] })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log("Comparison result:", data);
+        
+        const tbody = document.getElementById("comparisonBody");
+        tbody.innerHTML = data.comparison.map(app => `
+          <tr>
+            <td><strong>${app.app_name}</strong></td>
+            <td><strong>${app.risk_score}</strong></td>
+            <td><div class="risk-level ${app.risk_score > 50 ? 'CRITICAL' : app.risk_score > 30 ? 'HIGH' : 'MEDIUM'}">${app.risk_score > 50 ? 'CRITICAL' : app.risk_score > 30 ? 'HIGH' : 'MEDIUM'}</div></td>
+            <td>${app.permission_count}</td>
+          </tr>
+        `).join("");
+        
+        document.getElementById("comparisonResult").classList.remove("hidden");
+      } catch (error) {
+        console.error("Comparison error:", error);
+        alert("Error: " + error.message);
+      } finally {
+        document.getElementById("compareLoading").classList.add("hidden");
+      }
+    }
+
+    async function loadPermissions() {
+      try {
+        const response = await fetch(`${API_BASE}/permissions`);
+        const permissions = await response.json();
+        
+        let content = "";
+        Object.entries(permissions).forEach(([name, meta]) => {
+          content += `
+            <div style="margin-bottom: 12px; padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border-left: 3px solid #00d4ff;">
+              <strong>${name}</strong><br>
+              <small style="color: #999;">${meta.description}</small><br>
+              <div style="margin-top: 8px;">
+                <span class="category-badge">${meta.category}</span>
+                <span class="category-badge">${meta.risk_level}</span>
+              </div>
+            </div>
+          `;
+        });
+        
+        document.getElementById("permissionsContent").innerHTML = content;
+        document.getElementById("permissionsDbResult").classList.remove("hidden");
+      } catch (error) {
+        alert("Error: " + error.message);
+      }
+    }
+
+    function filterPermissions() {
+      console.log("Filter by:", document.getElementById("categoryFilter").value);
     }
   </script>
 </body>
