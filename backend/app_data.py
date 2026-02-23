@@ -183,7 +183,7 @@ PERMISSION_METADATA = {
         "category": "PHONE_INFO",
         "risk_level": "DANGEROUS",
         "severity": 7,
-        "description": "Make phone calls",
+        "description": "Make phone calls without user confirmation",
         "privacy_impact": "HIGH",
         "can_access": ["Initiate calls"],
         "dangerous": True
@@ -236,9 +236,38 @@ PERMISSION_METADATA = {
         "category": "SYSTEM",
         "risk_level": "CRITICAL",
         "severity": 10,
-        "description": "Device administration capabilities",
+        "description": "Device administration capabilities — can wipe device, reset passwords, and lock screen",
         "privacy_impact": "CRITICAL",
-        "can_access": ["Full device control", "Password reset", "Device lock"],
+        "can_access": ["Full device control", "Password reset", "Device lock", "Remote wipe"],
+        "dangerous": True
+    },
+
+    # Background/Boot Permissions (used by spyware)
+    "RECEIVE_BOOT_COMPLETED": {
+        "category": "SYSTEM",
+        "risk_level": "DANGEROUS",
+        "severity": 7,
+        "description": "Starts automatically when device boots — common in persistent malware",
+        "privacy_impact": "HIGH",
+        "can_access": ["Background auto-start"],
+        "dangerous": True
+    },
+    "FOREGROUND_SERVICE": {
+        "category": "SYSTEM",
+        "risk_level": "DANGEROUS",
+        "severity": 6,
+        "description": "Runs persistent background service — common in spyware",
+        "privacy_impact": "MEDIUM",
+        "can_access": ["Persistent background execution"],
+        "dangerous": True
+    },
+    "PROCESS_OUTGOING_CALLS": {
+        "category": "COMMUNICATION",
+        "risk_level": "DANGEROUS",
+        "severity": 9,
+        "description": "Intercept and redirect outgoing calls",
+        "privacy_impact": "CRITICAL",
+        "can_access": ["Outgoing call content", "Dialed numbers"],
         "dangerous": True
     }
 }
@@ -293,13 +322,27 @@ APP_PERMISSION_DATA = {
         "MICROPHONE",
         "CONTACTS"
     ],
+    # FakeApp simulates a malware/spyware APK with an aggressive permission set
     "FakeApp": [
         "INTERNET",
         "CAMERA",
         "MICROPHONE",
         "CONTACTS",
         "SMS",
-        "CALL_LOG"
+        "READ_SMS",
+        "SEND_SMS",
+        "CALL_LOG",
+        "READ_CALL_LOG",
+        "CALL_PHONE",
+        "PROCESS_OUTGOING_CALLS",
+        "ACCESS_FINE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "DEVICE_ADMIN",
+        "RECEIVE_BOOT_COMPLETED",
+        "FOREGROUND_SERVICE",
+        "GET_ACCOUNTS",
+        "PHONE_STATE"
     ],
     "TikTok": [
         "INTERNET",
@@ -315,6 +358,28 @@ APP_PERMISSION_DATA = {
     ]
 }
 
+# Package name to app name mapping for Play Store link resolution
+PACKAGE_NAME_MAP = {
+    # Exact package ID matches
+    "com.whatsapp": "WhatsApp",
+    "com.whatsapp.w4b": "WhatsApp",
+    "com.instagram.android": "Instagram",
+    "com.zhiliaoapp.musically": "TikTok",
+    "com.ss.android.ugc.trill": "TikTok",
+    "com.google.android.gm": "Gmail",
+    "com.fakeapp": "FakeApp",
+    "com.fake.app": "FakeApp",
+    "com.malware.fakeapp": "FakeApp",
+
+    # Partial / keyword matches (checked as substrings if exact fails)
+    "whatsapp": "WhatsApp",
+    "instagram": "Instagram",
+    "tiktok": "TikTok",
+    "musically": "TikTok",
+    "gmail": "Gmail",
+    "fakeapp": "FakeApp",
+}
+
 # Permission correlations - dangerous combinations
 PERMISSION_CORRELATIONS = {
     "SMS": ["CALL_LOG", "CONTACTS"],
@@ -324,15 +389,18 @@ PERMISSION_CORRELATIONS = {
     "CONTACTS": ["SMS", "CALL_LOG", "LOCATION"],
     "LOCATION": ["CAMERA", "MICROPHONE"],
     "DEVICE_ADMIN": ["SMS", "CALL_LOG", "CONTACTS"],
-    "GET_ACCOUNTS": ["CONTACTS", "READ_CALENDAR"]
+    "GET_ACCOUNTS": ["CONTACTS", "READ_CALENDAR"],
+    "PROCESS_OUTGOING_CALLS": ["CALL_LOG", "MICROPHONE"],
+    "RECEIVE_BOOT_COMPLETED": ["FOREGROUND_SERVICE", "DEVICE_ADMIN"]
 }
 
 # Risk thresholds for scoring
+# Upper bound is open-ended (float('inf')) so scores above 100 still register as CRITICAL
 RISK_THRESHOLDS = {
-    "LOW": (0, 15),
-    "MEDIUM": (16, 45),
-    "HIGH": (46, 85),
-    "CRITICAL": (86, 100)
+    "LOW":      (0,   15),
+    "MEDIUM":   (16,  45),
+    "HIGH":     (46,  85),
+    "CRITICAL": (86,  float('inf'))
 }
 
 # Trusted publishers (whitelisted)
