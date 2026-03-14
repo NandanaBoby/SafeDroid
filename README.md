@@ -5,7 +5,7 @@ cd backend
 python -m venv venv
 venv\Scripts\activate  
 pip install fastapi uvicorn
-uvicorn main:app --reload
+python uvicorn main:app --reload
 
 ❗❗IMP NOTE: DO NOT CLOSE THE BACKEND TERMINAL
 
