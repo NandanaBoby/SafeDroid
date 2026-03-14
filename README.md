@@ -5,9 +5,38 @@ BACKEND
 cd backend
 python -m venv venv
 venv\Scripts\activate  
-pip install fastapi uvicorn
+pip install fastapi uvicorn sqlalchemy google-play-scraper
+pip freeze > requirements.txt
+
+python seed_db.py # Set up the database (run this ONCE only)
+# You should see: ✅ Database seeded successfully → safedroid.db
 python uvicorn main:app --reload
+
+FRONTEND
+cd frontend
+npm install
+mpn run dev
+
+
+⚠️ If you see a nested frontend/frontend folder 
+run: rm -rf frontend/frontend
+Then proceed with npm install normally.
+
+
+NECESSARY GIT COMMANDS
+
+To pull : 
+git pull origin master
+
+To commit :
+git add .
+git commit -m "describe what they changed"
+
+To push :
+git push origin master
+
 =======
+
 A web application that analyzes the security risk of mobile apps based on their requested permissions.
 >>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
 
