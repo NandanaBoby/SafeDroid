@@ -1,14 +1,72 @@
 # main.py
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+<<<<<<< HEAD
+=======
+from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, HTTPException, Depends
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from urllib.parse import urlparse, parse_qs
 from sqlalchemy.orm import Session
+<<<<<<< HEAD
 
 from database import get_db, create_tables, App, AppPermission, PermissionMeta, PackageAlias
 from risk_engine import calculate_risk, PermissionAnalyzer
 from app_data import PERMISSION_METADATA, PERMISSION_CATEGORIES
+=======
+
+# use package-qualified imports so the module can be executed
+# from outside the directory (e.g. uvicorn backend.main:app)
+# import the analyzer; try a relative import first (package mode),
+# otherwise fall back to bare module import when running directly
+# within the backend folder.
+try:
+    from .risk_engine import calculate_risk, analyze_app, PermissionAnalyzer
+except ImportError:  # module not recognized as package
+    from risk_engine import calculate_risk, analyze_app, PermissionAnalyzer
+
+# Import from app_data_full first (has more apps), fallback to app_data
+# also expose APP_PERMISSION_DATA in case any future endpoints or utilities
+# need direct access to the raw dataset.
+# imports of data modules should also be package-qualified when
+# running from the project root.  fall back to the smaller dataset if
+# the full one is not available.
+# data imports: we use the same try/except pattern so the code is
+# importable both when running as a module (backend.main) and when
+# invoked directly from the backend directory.
+try:
+    from .app_data_full import (
+        PERMISSION_METADATA,
+        PERMISSION_CATEGORIES,
+        PACKAGE_NAME_MAP,
+        APP_PERMISSION_DATA,
+    )
+except ImportError:  # not a package context or full file not available
+    try:
+        from .app_data import (
+            PERMISSION_METADATA,
+            PERMISSION_CATEGORIES,
+            PACKAGE_NAME_MAP,
+            APP_PERMISSION_DATA,
+        )
+    except ImportError:
+        # fallback when run inside backend without package context
+        from app_data_full import (
+            PERMISSION_METADATA,
+            PERMISSION_CATEGORIES,
+            PACKAGE_NAME_MAP,
+            APP_PERMISSION_DATA,
+        )
+        # if that fails it'll raise and surface the real issue
+
+# database module may be loaded as part of package or directly
+try:
+    from .database import App, init_db, seed_database, get_db
+except ImportError:
+    from database import App, init_db, seed_database, get_db
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
 
 create_tables()
 
@@ -21,7 +79,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+<<<<<<< HEAD
 # ── Pydantic models ────────────────────────────────────────────────────────────
+=======
+# Mount frontend - comment out for development if frontend is run separately
+try:
+    app.mount("/ui", StaticFiles(directory="../frontend", html=True), name="frontend")
+except RuntimeError:
+    print("Frontend directory not found - API-only mode")
+
+
+# Startup event
+@app.on_event("startup")
+def startup_event():
+    """Initialize database and seed data on startup"""
+    try:
+        init_db()
+        print("Database tables created successfully!")
+        seed_database()
+        print("Database initialization complete!")
+    except Exception as e:
+        print(f"Database initialization warning: {e}")
+
+
+# Pydantic models
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
 
 class AppScanRequest(BaseModel):
     app_name: str = Field(..., description="Name of the app to scan")
@@ -134,6 +216,7 @@ def normalize_permissions(raw_permissions: list) -> list:
     Converts raw Play Store permission strings (any format) into
     PERMISSION_METADATA keys the risk engine can score.
 
+<<<<<<< HEAD
     Handles three formats:
       1. Full Android ID:  "android.permission.CAMERA"  -> "CAMERA"
       2. Human label:      "Camera"                     -> "CAMERA"
@@ -266,12 +349,50 @@ def get_app_permissions_from_db(app_name: str, db: Session):
 def extract_package_id(query: str):
     """Extract package ID from a Play Store URL or plain package name."""
     query = query.strip()
+=======
+# Database helper functions
+
+def get_app_from_db(db: Session, app_name: str) -> Optional[App]:
+    """Get app from PostgreSQL database"""
+    return db.query(App).filter(App.name.ilike(app_name)).first()
+
+
+def get_all_apps_from_db(db: Session) -> List[App]:
+    """Get all apps from PostgreSQL database"""
+    return db.query(App).order_by(App.name).all()
+
+
+# Helpers
+
+def resolve_query_to_app_name(query: str, db: Session = None) -> Optional[str]:
+    """Resolves a raw search query (app name OR Play Store URL) to a known app name"""
+    query = query.strip()
+    lower_query = query.lower()
+
+    # First try database if available
+    if db:
+        app = get_app_from_db(db, lower_query)
+        if app:
+            return app.name
+
+    # Direct case-insensitive match against PACKAGE_NAME_MAP
+    for key in PACKAGE_NAME_MAP:
+        if key.lower() == lower_query:
+            return PACKAGE_NAME_MAP[key]
+
+    # Try to parse as a URL and extract package name
+    package_id = None
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
     try:
         parsed = urlparse(query)
         if parsed.scheme in ("http", "https"):
             params = parse_qs(parsed.query)
             if "id" in params:
+<<<<<<< HEAD
                 return params["id"][0].lower()
+=======
+                package_id = params["id"][0].lower()
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
     except Exception:
         pass
     if "." in query and " " not in query and "://" not in query:
@@ -339,6 +460,7 @@ def resolve_query_to_app_name(query: str, db: Session):
     # 2. Package alias lookup
     package_id = extract_package_id(query)
     if package_id:
+<<<<<<< HEAD
         alias = db.query(PackageAlias).filter(PackageAlias.package_id == package_id).first()
         if alias:
             return alias.app.name
@@ -351,12 +473,32 @@ def resolve_query_to_app_name(query: str, db: Session):
     for alias in db.query(PackageAlias).all():
         if lower_q in alias.package_id or alias.package_id in lower_q:
             return alias.app.name
+=======
+        if package_id in PACKAGE_NAME_MAP:
+            return PACKAGE_NAME_MAP[package_id]
+        for keyword, app_name in PACKAGE_NAME_MAP.items():
+            if keyword in package_id or package_id in keyword:
+                return app_name
+
+    # Substring keyword match on raw query
+    for keyword, app_name in PACKAGE_NAME_MAP.items():
+        if keyword in lower_query or lower_query in keyword:
+            return app_name
+
+    # Try database for partial match
+    if db:
+        apps = get_all_apps_from_db(db)
+        for app in apps:
+            if lower_query in app.name.lower():
+                return app.name
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
 
     return None
 
 
-# ── Endpoints ──────────────────────────────────────────────────────────────────
+# Endpoints
 
+<<<<<<< HEAD
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
     try:
@@ -431,10 +573,36 @@ def search_app(data: SearchRequest, db: Session = Depends(get_db)):
         "explanations":          explanations,
         "source":                source
     }
+=======
+@app.post("/search")
+def search_app(data: SearchRequest, db: Session = Depends(get_db)):
+    """Search for an app by name or Play Store URL"""
+    resolved = resolve_query_to_app_name(data.query, db)
+
+    if not resolved:
+        raise HTTPException(status_code=404, detail=f"Could not find a matching app for: '{data.query}'")
+
+    app = get_app_from_db(db, resolved)
+    if app:
+        score, level, explanations = calculate_risk(app.permissions or [])
+        return {
+            "app_name": app.name,
+            "resolved_from": data.query,
+            "extracted_permissions": app.permissions or [],
+            "risk_score": app.risk_score or score,
+            "risk_level": app.risk_level or level,
+            "explanations": explanations,
+            "version": app.version,
+            "package_name": app.package_name
+        }
+
+    raise HTTPException(status_code=404, detail=f"Could not find a matching app for: '{data.query}'")
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
 
 
 @app.post("/scan")
 def scan_app(data: AppScanRequest, db: Session = Depends(get_db)):
+<<<<<<< HEAD
     permissions = get_app_permissions_from_db(data.app_name, db)
     if permissions is None:
         available = [a.name for a in db.query(App).order_by(App.name).all()]
@@ -464,6 +632,66 @@ def analyze_app_endpoint(data: AppScanRequest, db: Session = Depends(get_db)):
     categorized          = analyzer.categorize_permissions(permissions)
     total_score          = severity_analysis["total_score"]
     risk_level           = analyzer.calculate_risk_level(total_score)
+=======
+    """Basic app risk scanning"""
+    app_name = data.app_name
+
+    app = get_app_from_db(db, app_name)
+    if app:
+        score, level, explanations = calculate_risk(app.permissions or [])
+        return {
+            "app_name": app.name,
+            "extracted_permissions": app.permissions or [],
+            "risk_score": app.risk_score or score,
+            "risk_level": app.risk_level or level,
+            "explanations": explanations
+        }
+
+    raise HTTPException(status_code=404, detail="App not found in database")
+
+
+@app.post("/analyze")
+def analyze_app_comprehensive(data: AppScanRequest, db: Session = Depends(get_db)):
+    """Comprehensive app analysis with detailed permission breakdown"""
+    app_name = data.app_name
+
+    app = get_app_from_db(db, app_name)
+    if app:
+        result = analyze_app(app.name)
+        if "error" not in result:
+            result["from_database"] = True
+            result["version"] = app.version
+            result["package_name"] = app.package_name
+            return result
+
+    result = analyze_app(app_name)
+    if "error" in result:
+        raise HTTPException(status_code=404, detail="App not found in database")
+
+    result["from_database"] = False
+    return result
+
+
+@app.post("/analyze-permissions")
+def analyze_permissions(data: PermissionListRequest):
+    """Analyze a custom list of permissions for risk assessment"""
+    analyzer = PermissionAnalyzer()
+
+    invalid_perms = [p for p in data.permissions if p not in PERMISSION_METADATA]
+    if invalid_perms:
+        return {
+            "warning": f"Unknown permissions: {invalid_perms}",
+            "valid_permissions": [p for p in data.permissions if p in PERMISSION_METADATA]
+        }
+
+    severity_analysis = analyzer.calculate_severity_score(data.permissions)
+    correlation_analysis = analyzer.detect_permission_correlations(data.permissions)
+    privacy_analysis = analyzer.analyze_privacy_impact(data.permissions)
+    categorized = analyzer.categorize_permissions(data.permissions)
+
+    total_score = severity_analysis["total_score"]
+    risk_level = analyzer.calculate_risk_level(total_score)
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
 
     return {
         "app_name":   data.app_name,
@@ -483,6 +711,7 @@ def analyze_app_endpoint(data: AppScanRequest, db: Session = Depends(get_db)):
 
 @app.post("/detect-threats")
 def detect_threats(data: AppScanRequest, db: Session = Depends(get_db)):
+<<<<<<< HEAD
     permissions = get_app_permissions_from_db(data.app_name, db)
     if permissions is None:
         raise HTTPException(status_code=404, detail="App not found in database")
@@ -495,6 +724,32 @@ def detect_threats(data: AppScanRequest, db: Session = Depends(get_db)):
         "financial_risk":         "HIGH" if ("SEND_SMS" in permissions or "CALL_PHONE" in permissions) else "LOW",
         "detected_threats":       correlations["suspicious_patterns"]
     }
+=======
+    """Detect specific threat indicators and suspicious patterns in an app"""
+    app_name = data.app_name
+
+    app = get_app_from_db(db, app_name)
+    if app:
+        analyzer = PermissionAnalyzer()
+        threat_indicators = analyzer.detect_threat_indicators(app.name)
+        permissions = app.permissions or []
+        correlations = analyzer.detect_permission_correlations(permissions)
+
+        return {
+            "app_name": app.name,
+            "threat_indicators": threat_indicators,
+            "suspicious_patterns": correlations["suspicious_patterns"],
+            "pattern_risk_level": correlations["pattern_risk_level"],
+            "permissions": permissions,
+            "risk_score": app.risk_score,
+            "risk_level": app.risk_level
+        }
+
+    analyzer = PermissionAnalyzer()
+    threat_indicators = analyzer.detect_threat_indicators(app_name)
+    correlations = analyzer.detect_permission_correlations([])
+
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
     return {
         "app_name":            data.app_name,
         "threat_indicators":   indicators,
@@ -506,6 +761,7 @@ def detect_threats(data: AppScanRequest, db: Session = Depends(get_db)):
 
 @app.post("/bulk-analyze")
 def bulk_analyze(data: BulkScanRequest, db: Session = Depends(get_db)):
+<<<<<<< HEAD
     results  = []
     analyzer = PermissionAnalyzer()
     for app_name in data.app_names:
@@ -514,6 +770,19 @@ def bulk_analyze(data: BulkScanRequest, db: Session = Depends(get_db)):
             severity   = analyzer.calculate_severity_score(permissions)
             risk_level = analyzer.calculate_risk_level(severity["total_score"])
             results.append({"app_name": app_name, "risk_score": severity["total_score"], "risk_level": risk_level, "permission_count": len(permissions)})
+=======
+    """Analyze multiple apps and return comparative risk summary"""
+    results = []
+
+    for app_name in data.app_names:
+        app = get_app_from_db(db, app_name)
+        if app:
+            result = analyze_app(app.name)
+            if "error" not in result:
+                result["risk_score"] = app.risk_score
+                result["risk_level"] = app.risk_level
+                results.append(result)
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
 
     if not results:
         raise HTTPException(status_code=404, detail="No valid apps found")
@@ -529,18 +798,73 @@ def bulk_analyze(data: BulkScanRequest, db: Session = Depends(get_db)):
     }
 
 
+<<<<<<< HEAD
 @app.post("/compare")
 def compare_apps(data: BulkScanRequest, db: Session = Depends(get_db)):
+=======
+@app.get("/permissions")
+def get_permissions(category: Optional[str] = None):
+    """Get permission metadata with optional category filtering"""
+    if category:
+        if category not in PERMISSION_CATEGORIES:
+            raise HTTPException(status_code=400, detail=f"Invalid category: {category}")
+        filtered_perms = {p: meta for p, meta in PERMISSION_METADATA.items() if meta.get("category") == category}
+        return {"category": category, "permissions": filtered_perms}
+    return PERMISSION_METADATA
+
+
+@app.get("/permission-categories")
+def get_permission_categories():
+    """Get all permission categories and their descriptions"""
+    return PERMISSION_CATEGORIES
+
+
+@app.get("/apps")
+def get_available_apps(db: Session = Depends(get_db)):
+    """Get list of all available apps in the database"""
+    apps = get_all_apps_from_db(db)
+    
+    if apps:
+        return [{
+            "name": app.name,
+            "version": app.version,
+            "risk_level": app.risk_level,
+            "permissions_count": len(app.permissions) if app.permissions else 0,
+            "risk_score": app.risk_score
+        } for app in apps]
+    
+    return []
+
+
+@app.post("/compare")
+def compare_apps(data: BulkScanRequest, db: Session = Depends(get_db)):
+    """Compare multiple apps and provide detailed comparison"""
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
     if len(data.app_names) < 2:
         raise HTTPException(status_code=400, detail="Provide at least 2 apps")
 
     analyzer  = PermissionAnalyzer()
     apps_data = []
     for app_name in data.app_names:
+<<<<<<< HEAD
         permissions = get_app_permissions_from_db(app_name, db)
         if permissions:
             severity = analyzer.calculate_severity_score(permissions)
             apps_data.append({"app_name": app_name, "risk_score": severity["total_score"], "permission_count": len(permissions), "dangerous_count": severity["critical_count"] + severity["dangerous_count"]})
+=======
+        app = get_app_from_db(db, app_name)
+        if app:
+            permissions = app.permissions or []
+            severity = analyzer.calculate_severity_score(permissions)
+            apps_data.append({
+                "app_name": app.name,
+                "risk_score": app.risk_score or severity["total_score"],
+                "permission_count": len(permissions),
+                "dangerous_count": severity["critical_count"] + severity["dangerous_count"],
+                "critical_permissions": severity["severity_breakdown"]["critical"],
+                "risk_level": app.risk_level
+            })
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63
 
     if not apps_data:
         raise HTTPException(status_code=404, detail="No valid apps found")
@@ -553,6 +877,7 @@ def compare_apps(data: BulkScanRequest, db: Session = Depends(get_db)):
     }
 
 
+<<<<<<< HEAD
 @app.get("/permissions")
 def get_permissions(category: Optional[str] = None):
     if category:
@@ -566,3 +891,16 @@ def get_permissions(category: Optional[str] = None):
 @app.get("/permission-categories")
 def get_permission_categories():
     return PERMISSION_CATEGORIES
+=======
+@app.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    """Health check endpoint"""
+    apps_count = db.query(App).count() if db else 0
+    return {
+        "status": "healthy",
+        "version": "2.0.0",
+        "apps_in_database": apps_count,
+        "permissions_tracked": len(PERMISSION_METADATA),
+        "database": "postgresql"
+    }
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63

@@ -1,16 +1,56 @@
-# React + Vite
+# SafeDroid Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite frontend for SafeDroid.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 16+ with npm installed
+- Backend running at http://127.0.0.1:8000 (see main README)
 
-## React Compiler
+## Running the Backend First
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+From the project root, activate the Python environment and start the backend.
 
-## Expanding the ESLint configuration
+**Windows:**
+```powershell
+.venv\Scripts\Activate.ps1
+$env:DATABASE_URL='sqlite:///./safedroid.db'
+python -m uvicorn backend.main:app --port 8000
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+**Mac/Linux:**
+```bash
+source .venv/bin/activate
+export DATABASE_URL='sqlite:///./safedroid.db'
+python -m uvicorn backend.main:app --port 8000
+```
+
+You'll see:
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000
+```
+
+**Keep this terminal open.** Then proceed to the frontend in a new terminal.
+
+## Running the Frontend
+
+From the project root, start the frontend:
+
+```bash
+cd frontend
+npm run dev
+```
+
+You should see:
+```
+✔  Local:   http://localhost:5176/
+```
+
+Then open your browser to: **http://localhost:5176/**
+
+
+
+
+
+
+

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
@@ -14,3 +15,10 @@ starlette==0.52.1
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.41.0
+=======
+fastapi
+uvicorn
+pydantic
+psycopg2-binary
+sqlalchemy
+>>>>>>> 980cc9d43c7b757a060089373c64d8590671ce63

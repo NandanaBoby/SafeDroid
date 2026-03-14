@@ -5,14 +5,42 @@ Provides sophisticated permission analysis with correlation detection,
 threat indicators, and comprehensive risk scoring
 """
 
-from app_data import (
-    PERMISSION_METADATA,
-    PERMISSION_CATEGORIES,
-    APP_PERMISSION_DATA,
-    PERMISSION_CORRELATIONS,
-    RISK_THRESHOLDS,
-    TRUSTED_PUBLISHERS
-)
+# Try to use the larger app_data_full module if it exists, matching
+# the behavior in main.py and database.py so that all components
+# share the same dataset.  This keeps the analyzer and database in
+# sync when the full dataset is present.
+# use backend package imports so this module works when the
+# working directory is the repository root
+# try relative import first; fall back to bare module import when
+# running from the backend directory without package context
+try:
+    from .app_data_full import (
+        PERMISSION_METADATA,
+        PERMISSION_CATEGORIES,
+        APP_PERMISSION_DATA,
+        PERMISSION_CORRELATIONS,
+        RISK_THRESHOLDS,
+        TRUSTED_PUBLISHERS
+    )
+except ImportError:
+    try:
+        from .app_data import (
+            PERMISSION_METADATA,
+            PERMISSION_CATEGORIES,
+            APP_PERMISSION_DATA,
+            PERMISSION_CORRELATIONS,
+            RISK_THRESHOLDS,
+            TRUSTED_PUBLISHERS
+        )
+    except ImportError:
+        from app_data_full import (
+            PERMISSION_METADATA,
+            PERMISSION_CATEGORIES,
+            APP_PERMISSION_DATA,
+            PERMISSION_CORRELATIONS,
+            RISK_THRESHOLDS,
+            TRUSTED_PUBLISHERS
+        )
 
 
 class PermissionAnalyzer:
